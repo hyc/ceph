@@ -363,7 +363,7 @@ void RGWGetObj::execute()
 
     if (ofs <= end) {
       if (start_time > gc_invalidate_time) {
-	int r = rgwstore->defer_gc(s->obj_ctx, obj);
+	int r = store->defer_gc(s->obj_ctx, obj);
 	if (r < 0) {
 	  dout(0) << "WARNING: could not defer gc entry for obj" << dendl;
 	}
