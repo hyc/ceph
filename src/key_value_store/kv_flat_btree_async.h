@@ -35,7 +35,8 @@ enum {
   UNWRITE_OBJECT = 3,
   RESTORE_OBJECT = 4,
   REMOVE_OBJECT = 5,
-  REMOVE_PREFIX = 6
+  REMOVE_PREFIX = 6,
+  AIO_MAKE_OBJECT = 7
 };
 
 struct rebalance_args;

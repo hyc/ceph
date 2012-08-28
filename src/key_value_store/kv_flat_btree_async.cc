@@ -767,7 +767,11 @@ void KvFlatBtreeAsync::set_up_ops(
     index_data this_entry(idata.to_create[i].max, idata.to_create[i].min,
 	idata.to_create[i].obj);
     to_insert[idata.to_create[i].max.encoded()] = to_bl(this_entry);
-    it->first = pair<int, string>(MAKE_OBJECT, idata.to_create[i].obj);
+    if (idata.to_create.size() <= 2) {
+      it->first = pair<int, string>(MAKE_OBJECT, idata.to_create[i].obj);
+    } else {
+      it->first = pair<int, string>(AIO_MAKE_OBJECT, idata.to_create[i].obj);
+    }
     set_up_make_object(create_vector[i].omap, it->second);
     it++;
   }
@@ -825,6 +829,8 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
     const index_data &idata,
     vector<pair<pair<int, string>, librados::ObjectWriteOperation*> > *ops) {
   int err = 0;
+  vector<librados::AioCompletion*> aiocs(idata.to_create.size());
+  int count = 0;
   for (vector<pair<pair<int, string>,
       librados::ObjectWriteOperation*> >::iterator it = ops->begin();
       it != ops->end(); ++it) {
@@ -887,6 +893,13 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
 	  << std::endl;
       }
       break;
+    case AIO_MAKE_OBJECT:
+      if (verbose) cout << debug_prefix << " launching asynchronous create"
+	  << it->first.second << std::endl;
+      aiocs[count] = rados.aio_create_completion();
+      io_ctx.aio_operate(it->first.second, aiocs[count], it->second);
+      count++;
+      break;
     case REMOVE_OBJECT://deleting
       if (verbose) cout << debug_prefix << " deleting " << it->first.second
       << std::endl;
@@ -940,6 +953,29 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
       break;
     }
   }
+
+  for (count -= 1; count >= 0; count--) {
+    aiocs[count]->wait_for_safe();
+    err = aiocs[count]->get_return_value();
+    if (err < 0) {
+      //this can happen if someone else was cleaning up after us.
+      if (verbose) cout << debug_prefix << " a create failed"
+	  << " with code " << err << std::endl;
+      if (err == -EEXIST) {
+	//someone thinks we died, so die
+	if (verbose) cout << client_name << " is suiciding!" << std::endl;
+	return -ESUICIDE;
+      } else {
+	assert(false);
+      }
+      return err;
+    }
+    if (verbose || idata.to_create.size() > 2) {
+      cout << debug_prefix << " completed aio " << aiocs.size() - count
+	  << "/" << aiocs.size() << std::endl;
+    }
+  }
+
   return err;
 }
 
