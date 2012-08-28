@@ -900,6 +900,30 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
       aiocs[count] = rados.aio_create_completion();
       io_ctx.aio_operate(it->first.second, aiocs[count], it->second);
       count++;
+      if ((int)idata.to_create.size() == count) {
+	cout << "starting aiowrite waiting loop" << std::endl;
+	  for (count -= 1; count >= 0; count--) {
+	    aiocs[count]->wait_for_safe();
+	    err = aiocs[count]->get_return_value();
+	    if (err < 0) {
+	      //this can happen if someone else was cleaning up after us.
+	      cerr << debug_prefix << " a create failed"
+		  << " with code " << err << std::endl;
+	      if (err == -EEXIST) {
+		//someone thinks we died, so die
+		cerr << client_name << " is suiciding!" << std::endl;
+		return -ESUICIDE;
+	      } else {
+		assert(false);
+	      }
+	      return err;
+	    }
+	    if (verbose || idata.to_create.size() > 2) {
+	      cout << debug_prefix << " completed aio " << aiocs.size() - count
+		  << "/" << aiocs.size() << std::endl;
+	    }
+	  }
+      }
       break;
     case REMOVE_OBJECT://deleting
       if (verbose) cout << debug_prefix << " deleting " << it->first.second
@@ -952,28 +976,6 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
 	  << it->first.second
 	  << " succeeded." << std::endl;
       break;
-    }
-  }
-
-  for (count -= 1; count >= 0; count--) {
-    aiocs[count]->wait_for_safe();
-    err = aiocs[count]->get_return_value();
-    if (err < 0) {
-      //this can happen if someone else was cleaning up after us.
-      cerr << debug_prefix << " a create failed"
-	  << " with code " << err << std::endl;
-      if (err == -EEXIST) {
-	//someone thinks we died, so die
-	cerr << client_name << " is suiciding!" << std::endl;
-	return -ESUICIDE;
-      } else {
-	assert(false);
-      }
-      return err;
-    }
-    if (verbose || idata.to_create.size() > 2) {
-      cout << debug_prefix << " completed aio " << aiocs.size() - count
-	  << "/" << aiocs.size() << std::endl;
     }
   }
 
