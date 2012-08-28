@@ -837,6 +837,7 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
     if ((((KeyValueStructure *)this)->*KvFlatBtreeAsync::interrupt)() == 1 ) {
       return -ESUICIDE;
     }
+    cout << "op is " << it->first.first << std::endl;
     switch (it->first.first) {
     case ADD_PREFIX://prefixing
       if (verbose) cout << debug_prefix << " adding prefix" << std::endl;
@@ -894,7 +895,7 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
       }
       break;
     case AIO_MAKE_OBJECT:
-      if (verbose) cout << debug_prefix << " launching asynchronous create"
+      cout << debug_prefix << " launching asynchronous create"
 	  << it->first.second << std::endl;
       aiocs[count] = rados.aio_create_completion();
       io_ctx.aio_operate(it->first.second, aiocs[count], it->second);
@@ -959,11 +960,11 @@ int KvFlatBtreeAsync::perform_ops(const string &debug_prefix,
     err = aiocs[count]->get_return_value();
     if (err < 0) {
       //this can happen if someone else was cleaning up after us.
-      if (verbose) cout << debug_prefix << " a create failed"
+      cerr << debug_prefix << " a create failed"
 	  << " with code " << err << std::endl;
       if (err == -EEXIST) {
 	//someone thinks we died, so die
-	if (verbose) cout << client_name << " is suiciding!" << std::endl;
+	cerr << client_name << " is suiciding!" << std::endl;
 	return -ESUICIDE;
       } else {
 	assert(false);
