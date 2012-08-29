@@ -244,7 +244,9 @@ int KvStoreBench::test_random_insertions() {
   prev_ss << (atoi(client_name.c_str()) - 1);
   string prev_rid = prev_ss.str();
   stringstream last_ss;
-  last_ss << client_name.substr(0,client_name.size() - 2);
+  if (client_name.size() > 1) {
+    last_ss << client_name.substr(0,client_name.size() - 2);
+  }
   last_ss << clients - 1;
   string last_rid = client_name == "admin" ? "admin" : last_ss.str();
 
