@@ -738,7 +738,9 @@ void KvFlatBtreeAsync::set_up_prefix_index(
   }
   assert(*err == 0);
   owo->omap_cmp(assertions, err);
-  owo->omap_set(to_insert);
+  if (to_create.size() <= 2) {
+    owo->omap_set(to_insert);
+  }
 }
 
 //some args can be null if there are no corresponding entries in p
@@ -789,9 +791,12 @@ void KvFlatBtreeAsync::set_up_ops(
     set_up_delete_object(it->second);
     it++;
   }
-  it->second->omap_cmp(assertions, err);
+  if ((int)idata.to_create.size() <= 2) {
+    it->second->omap_cmp(assertions, err);
+  }
   it->second->omap_rm_keys(to_remove);
   it->second->omap_set(to_insert);
+
 
   it->first = pair<int, string>(REMOVE_PREFIX, index_name);
 }
