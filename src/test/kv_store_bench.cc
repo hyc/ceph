@@ -95,7 +95,7 @@ int KvStoreBench::setup(int argc, const char** argv) {
       << "   --cache-refresh                               percent (1-100) of cache-size to read each \n"
       << "                                                 time the index is read\n"
       << "OTHER OPTIONS\n"
-      << "   -v                                            display debug output\n";
+      << "   --verbosity-on                                display debug output\n";
   for (unsigned i = 0; i < args.size(); i++) {
     if(i < args.size() - 1) {
       if (strcmp(args[i], "--ops") == 0) {
@@ -141,7 +141,7 @@ int KvStoreBench::setup(int argc, const char** argv) {
       } else if (strcmp(args[i], "-r") == 0) {
 	srand(atoi(args[i+1]));
       }
-    } else if (strcmp(args[i], "-v") == 0) {
+    } else if (strcmp(args[i], "--verbosity-on") == 0) {
 	verbose = true;
     } else if (strcmp(args[i], "--help") == 0) {
       cout << help.str() << std::endl;
