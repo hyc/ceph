@@ -278,7 +278,8 @@ int KvStoreBench::test_random_insertions() {
   librados::ObjectWriteOperation owo;
   owo.create(true);
   io_ctx.operate(client_name + ".done-setting", &owo);
-  cout << "created " << client_name + ".done-setting" << std::endl;
+  cout << "created " << client_name + ".done-setting. waiting for "
+      << last_rid << ".done-setting" << std::endl;
 
   do {
     librados::ObjectReadOperation oro;

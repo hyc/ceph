@@ -275,10 +275,10 @@ int KvFlatBtreeAsync::read_index(const string &key, index_data * idata,
   err = io_ctx.operate(index_name, &oro, NULL);
   utime_t mytime = ceph_clock_now(g_ceph_context);
   if (err < 0){
-    if (verbose) cout << "\t" << client_name
+    cerr << "\t" << client_name
 	<< "-read_index: getting keys failed with "
 	<< err << std::endl;
-    assert(false);
+    assert(0 == client_name + "-read_index: reading index failed");
     return err;
   }
   kvmap.insert(dupmap.begin(), dupmap.end());
@@ -1130,7 +1130,6 @@ int KvFlatBtreeAsync::cleanup(const index_data &idata, const int &errno) {
     break;
   }
   default: {
-    assert(false);
     //roll back all changes.
     if (verbose) cout << "\t\t" << client_name << "-cleanup: rolling back"
 	<< std::endl;
